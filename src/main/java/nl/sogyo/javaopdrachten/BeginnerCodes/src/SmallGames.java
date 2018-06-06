@@ -14,7 +14,7 @@ public class SmallGames {
 		 */
 		
 		int userChoice = -1;
-		if (choice.equals("heads")) {// alswais heads
+		if (choice.equals("heads")) {
 			userChoice = 0;
 		}else if(choice.equals("tails")){
 			userChoice = 1;
