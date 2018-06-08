@@ -19,8 +19,6 @@ public class Mastermind {
 		for(int i = 0; i < 4; i++) {
 			code[i] = colors[(int)(Math.random()*6)];
 			answer += code[i] + " ";
-			
-			System.out.println(code[i]);
 		}
 			
 		// input
