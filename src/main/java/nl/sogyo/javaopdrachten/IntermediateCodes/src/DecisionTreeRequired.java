@@ -1,108 +1,63 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
 
 public class DecisionTreeRequired {
 	static HashMap<String,Node> nodeMap;
-	static ArrayList<Edge> edgeList;
 	
 	private static void extractNodes(String fileName) throws IOException{
 		BufferedReader dataFile = new BufferedReader(new FileReader(fileName));
-		HashMap<String,Node> nodes = new HashMap<>();
+		nodeMap = new HashMap<>();
 		String line = "";
 		
 		while((line = dataFile.readLine())!= null) {
 			String[] fields = line.split(", ");
 			if(fields.length == 2) {
-				nodes.put(fields[0],new Node(fields));
+				nodeMap.put(fields[0],new Node(fields));
 			}
 		}
 		dataFile.close();
-		nodeMap = nodes;
 	}
 	
-	private static void assignEdges(String fileName) throws IOException {
+	public static void connectNodesWithEdges(String fileName) throws IOException {
 		BufferedReader dataFile = new BufferedReader(new FileReader(fileName));
-		ArrayList<Edge> edges = new ArrayList<>();
 		String line = "";
 		
 		while((line = dataFile.readLine())!= null) {
 			String[] fields = line.split(", ");
 			if(fields.length == 3) {
-				edges.add(new Edge(nodeMap.get(fields[0]),nodeMap.get(fields[1]),fields[2]));
+				nodeMap.get(fields[0]).setDestination(fields[2], nodeMap.get(fields[1]));
 			}
 		}
 		dataFile.close();
-		edgeList = edges;
 	}
 	
-	private static Node findFirstNode() {
+	
+	public static Node findFirstNode() {
 		for (Node node : nodeMap.values()) {
-			boolean startNode = true;
-			for(Edge edge : edgeList) {
-				if (node == edge.getDestinationNode()) {
-					startNode = false;
-					break;
-				}
-			}
-			if (startNode) {
+			if(node.getPreviousNode() == null) {
 				return node;
 			}
-		}
-		return null ;
-	}
-
-	private static Node nextNode(Node origin, boolean answer) {
-		for(Edge edge : edgeList) {
-			if(origin == edge.getOriginNode() && (answer == edge.getAnswer())) {
-				return edge.getDestinationNode();
-			}
-		}
+		}	
 		return null;
 	}
-	
-	private static boolean isAnswerNode(Node node) {
-		for(Edge edge : edgeList) {
-			if(node == edge.getOriginNode()) {
-				return false;
-			}
-		}
-		return true;
-	}
-	
+
 	public static void readFile(String fileName) {
 		try {
 			extractNodes(fileName);
-			assignEdges(fileName);
+			connectNodesWithEdges(fileName);
 		} catch (IOException e) {
 			 System.out.println("File Read Error");
 		}
 	}
 	
-	public static void executeDecisionTree() {
-		Scanner sc = new Scanner(System.in);
-		Node currentNode = findFirstNode();
-		
-		while (currentNode != null) {
-			System.out.println(currentNode.getQuestion() + " (Ja/Nee)");
-			String answer = sc.next();
-			currentNode = nextNode(currentNode,answer.equals("Ja"));
-			
-			if (isAnswerNode(currentNode)) {
-				System.out.println("Het blad is van een " + currentNode.getQuestion());
-				break;
-			}	
-		}
-		sc.close();
-	}
-
 	public static void main(String[] args) {
 		readFile("..\\..\\..\\..\\..\\resources\\intermediate\\decision-tree-data.txt"); // current map is IntermediateCodes
-
-		executeDecisionTree();
+		
+		Node firstNode = findFirstNode();
+		firstNode.executeDecisionTree();
 	}
 
 }
@@ -111,39 +66,40 @@ public class DecisionTreeRequired {
 class Node{
 	String name;
 	String question;
+	Node previousNode;
+	HashMap<String,Node> destinations;
 	
 	public Node(String[] fileFields) {
 		name = fileFields[0];
 		question = fileFields[1];
+		previousNode = null;
+		destinations = new HashMap<>();
 	}
 	
-	public String getQuestion() {
-		return question;
+	public void setDestination(String answer, Node nextNode) {
+		destinations.put(answer, nextNode);
+		nextNode.setPrevious(this);
 	}
+	
+	private void setPrevious(Node prevNode) {
+		previousNode = prevNode;
+	}
+	
+	public Node getPreviousNode() {
+		return previousNode;
+	}
+	
+	public void executeDecisionTree() {
+		Scanner input = new Scanner(System.in);
+		if (destinations.size() != 0) {
+			System.out.println(question + " (Ja/Nee)");
+			destinations.get(input.next()).executeDecisionTree();
+		} else {
+			System.out.println("Het blad is van een " + question);
+			input.close();
+		}	
+	}
+
 }
 
-class Edge{
-	Node originNode;
-	Node destinationNode;
-	Boolean answerBool;
-	
-	public Edge(Node origin, Node destination, String answer) {
-		originNode = origin;
-		destinationNode = destination;
-		answerBool = answer.equals("Ja");
-	}
-	
-	public Node getDestinationNode() {
-		return destinationNode;
-	}
-	
-	public Node getOriginNode() {
-		return originNode;
-	}
-	
-	public Boolean getAnswer() {
-		return answerBool;
-	}
-	
-}
 
