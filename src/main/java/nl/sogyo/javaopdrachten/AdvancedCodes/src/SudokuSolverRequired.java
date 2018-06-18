@@ -1,7 +1,6 @@
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Scanner;
 
 public class SudokuSolverRequired {
 	static ArrayList<ArrayList<Coordinate>> nestedCoordinateList = new ArrayList<>();
@@ -17,41 +16,28 @@ public class SudokuSolverRequired {
 		}
 	}
 	
-	public static void printRow(ArrayList<Coordinate> row) {
-		System.out.print("|");
-		for(Coordinate coord : row) {
-			coord.printCoord();
-			coord.printBoxPart();
-		}
-		System.out.println();
-	}
-	
+
 	public static void readSudoku(String sudokuInput) {
 		initializeCoordinateLists();
 		
 		char[] valueArray = sudokuInput.toCharArray();
 		
 		for(int coordNum = 0; coordNum < valueArray.length; coordNum++) {
-			Coordinate coord = new Coordinate(coordNum); 
-			coord.assignValue(Character.getNumericValue(valueArray[coordNum]));
+			Coordinate coord = new Coordinate(coordNum,Character.getNumericValue(valueArray[coordNum])); 
 			
 			nestedCoordinateList.get(coord.getRowNumber()).add(coord);
 			coordinatePerColumnList.get(coord.getColNumber()).add(coord);
 			coordinatePerBlockList.get(coord.getBlockNumber()).add(coord);
 		}
-	}
-
-	public static void printSudoku() {
-		System.out.println(" ----- ----- ----- ");
 		for(ArrayList<Coordinate> row : nestedCoordinateList) {
-			printRow(row);
-			if(nestedCoordinateList.indexOf(row) % 3 == 2) {
-				System.out.println(" ----- ----- ----- ");
+			for(Coordinate coord : row) {
+				coord.makeInfluenceableCoordinateLists(nestedCoordinateList, coordinatePerColumnList,coordinatePerBlockList);
 			}
 		}
 	}
+
 	
-	private static void solveSudoku() {
+	public static void solveSudoku() {
 		while(change) {
 			change = false;
 			for(ArrayList<Coordinate> row : nestedCoordinateList) {
@@ -64,56 +50,6 @@ public class SudokuSolverRequired {
 
 	}
 	
-	private static void removePosDueCoordsWithSamePos(Coordinate givenCoord) {
-		ArrayList<ArrayList <Coordinate>> influenceableCoordList = makeInfluenceableCoordinateLists(givenCoord);
-
-		if (givenCoord.getAssignedValue() == 0) {
-			for(ArrayList <Coordinate> unit : influenceableCoordList) {
-				removePosIfSameAmountPosAsCoords(unit,givenCoord);
-			}
-		}
-	}
-
-	private static void removePosIfSameAmountPosAsCoords(ArrayList <Coordinate> unit,Coordinate givenCoord) {
-		ArrayList <Coordinate> samePosCoordsList = makeSamePosCoordList(unit,givenCoord);
-		HashSet <Integer> AllPosOfSamePosCoordsSet = makeCoordPosSet(samePosCoordsList);
-		
-		if (samePosCoordsList.size() == AllPosOfSamePosCoordsSet.size()) {
-			for(Coordinate loopCoord : unit) {
-				if (!samePosCoordsList.contains(loopCoord) && loopCoord != givenCoord) {
-					for(Integer possibility : AllPosOfSamePosCoordsSet) {
-						for(Coordinate coord: samePosCoordsList) {
-							coord.printCoordData();
-						}
-						loopCoord.removePos(possibility);
-					}
-				}
-			}
-		}
-	}
-
-	private static HashSet<Integer> makeCoordPosSet(ArrayList<Coordinate> coordList) {
-		HashSet <Integer> allPosOfCoordListSet = new HashSet<>();
-		for(Coordinate coord : coordList) {
-			allPosOfCoordListSet.addAll(coord.getPossibleValueList());
-		}
-		return allPosOfCoordListSet;
-	}
-
-	private static ArrayList<Coordinate> makeSamePosCoordList(ArrayList<Coordinate> unit, Coordinate givenCoord) { 
-		ArrayList <Coordinate> samePosCoords = new ArrayList<>();
-		for (Coordinate loopCoord : unit) {
-			if (loopCoord.getPossibleValueList().size() != 0) {
-				HashSet <Integer> bothCoordPos = new HashSet<>(givenCoord.getPossibleValueList());
-				bothCoordPos.addAll(loopCoord.getPossibleValueList());
-				if(bothCoordPos.size() <= givenCoord.getPossibleValueList().size() +1) {
-					samePosCoords.add(loopCoord);
-				}
-			}
-		}
-		return samePosCoords;
-	}
-
 	private static void fillSudokuField(Coordinate coord) {
 		if (coord.getAssignedValue() == 0) {
 			assignIfOnlyPosInUnit(coord); 
@@ -127,7 +63,7 @@ public class SudokuSolverRequired {
 
 	private static void assignIfOnlyPosInUnit(Coordinate givenCoord) {
 		for(Integer pos : givenCoord.getPossibleValueList()) {
-			for (ArrayList <Coordinate> unit : makeInfluenceableCoordinateLists(givenCoord)) {
+			for (ArrayList <Coordinate> unit : givenCoord.getInfluenceableCoords()) {
 				if (!posInUnit(pos, unit)) {
 					givenCoord.assignValue(pos);
 					return; 
@@ -135,7 +71,6 @@ public class SudokuSolverRequired {
 			}
 		}
 	}
-
 	private static boolean posInUnit(Integer pos, ArrayList <Coordinate> unit) {
 		for(Coordinate coord : unit) {
 			if(coord.getPossibleValueList().contains(pos)) {
@@ -152,26 +87,76 @@ public class SudokuSolverRequired {
 	}
 
 	private static void removePosDueAssignedValue(Coordinate givenCoord) {
-		ArrayList<ArrayList <Coordinate>> influenceableCoordinates = makeInfluenceableCoordinateLists(givenCoord);
-		for(ArrayList <Coordinate> unit : influenceableCoordinates) {
+		for(ArrayList <Coordinate> unit : givenCoord.getInfluenceableCoords()) {
 			for(Coordinate loopCoord : unit) {
 				loopCoord.removePos(givenCoord.getAssignedValue());
 			}	
 		}	
 	}
 
-	private static ArrayList<ArrayList <Coordinate>> makeInfluenceableCoordinateLists(Coordinate coord) {
-		ArrayList<ArrayList <Coordinate>> influenceableCoordinates = new ArrayList<>();
-			influenceableCoordinates.add(new ArrayList<>(nestedCoordinateList.get(coord.getRowNumber()).subList(0, 9)));
-			influenceableCoordinates.add(new ArrayList<>(coordinatePerColumnList.get(coord.getColNumber()).subList(0, 9)));
-			influenceableCoordinates.add(new ArrayList<>(coordinatePerBlockList.get(coord.getBlockNumber()).subList(0, 9)));
-			
-			for (ArrayList <Coordinate> unit : influenceableCoordinates) { 
-				unit.remove(coord); 
-			}
-			return influenceableCoordinates; // store in coord?
-	}
+	private static void removePosDueCoordsWithSamePos(Coordinate givenCoord) {
 
+		if (givenCoord.getAssignedValue() == 0) {
+			for(ArrayList <Coordinate> unit : givenCoord.getInfluenceableCoords()) {
+				removePosIfSameAmountPosAsCoords(unit,givenCoord);
+			}
+		}
+	}
+	private static void removePosIfSameAmountPosAsCoords(ArrayList <Coordinate> unit,Coordinate givenCoord) {
+		ArrayList <Coordinate> samePosCoordsList = makeSamePosCoordList(unit,givenCoord);
+		HashSet <Integer> AllPosOfSamePosCoordsSet = makeCoordPosSet(samePosCoordsList);
+		
+		if (samePosCoordsList.size() == AllPosOfSamePosCoordsSet.size()) {
+			for(Coordinate loopCoord : unit) {
+				if (!samePosCoordsList.contains(loopCoord) && loopCoord != givenCoord) {
+					for(Integer possibility : AllPosOfSamePosCoordsSet) {
+						loopCoord.removePos(possibility);
+					}
+				}
+			}
+		}
+	}
+	private static ArrayList<Coordinate> makeSamePosCoordList(ArrayList<Coordinate> unit, Coordinate givenCoord) { 
+		ArrayList <Coordinate> samePosCoords = new ArrayList<>();
+		for (Coordinate loopCoord : unit) {
+			if (loopCoord.getPossibleValueList().size() != 0) {
+				HashSet <Integer> bothCoordPos = new HashSet<>(givenCoord.getPossibleValueList());
+				bothCoordPos.addAll(loopCoord.getPossibleValueList());
+				if(bothCoordPos.size() <= givenCoord.getPossibleValueList().size() +1) {
+					samePosCoords.add(loopCoord);
+				}
+			}
+		}
+		return samePosCoords;
+	}
+	private static HashSet<Integer> makeCoordPosSet(ArrayList<Coordinate> coordList) {
+		HashSet <Integer> allPosOfCoordListSet = new HashSet<>();
+		for(Coordinate coord : coordList) {
+			allPosOfCoordListSet.addAll(coord.getPossibleValueList());
+		}
+		return allPosOfCoordListSet;
+	}
+	
+
+	private static void printRow(ArrayList<Coordinate> row) {
+		System.out.print("|");
+		for(Coordinate coord : row) {
+			coord.printCoord();
+			coord.printBoxPart();
+		}
+		System.out.println();
+	}
+	public static void printSudoku() {
+		System.out.println(" ----- ----- ----- ");
+		for(ArrayList<Coordinate> row : nestedCoordinateList) {
+			printRow(row);
+			if(nestedCoordinateList.indexOf(row) % 3 == 2) {
+				System.out.println(" ----- ----- ----- ");
+			}
+		}
+	}
+	
+	
 	private static boolean checkUnitList(ArrayList<ArrayList<Coordinate>> UnitList) {
 		HashSet <Integer> unitValues = new HashSet<>();
 		for(ArrayList<Coordinate> unit : UnitList) {
@@ -184,104 +169,31 @@ public class SudokuSolverRequired {
 		}
 		return true;
 	}
-	
-	private static boolean checkSudoku() {
-		return checkUnitList(nestedCoordinateList) && checkUnitList(coordinatePerColumnList) && checkUnitList(coordinatePerBlockList);
+	private static void checkSudoku() {
+		if(checkUnitList(nestedCoordinateList) && checkUnitList(coordinatePerColumnList) && checkUnitList(coordinatePerBlockList)) {
+			System.out.println("No double numbers");
+		}else {
+			System.out.println("Error: double numbers");
+		}
 	}
 	
+	
 	public static void main(String[] args) {
-		// scanner.next() for input --> error on .nextInt(), the huge number is recognized as string
-		String sudokuInput = "000820090500000000308040007100000040006402503000090010093004000004035200000700900";
+		Scanner input = new Scanner(System.in);
+		String sudokuInput = input.next();
+		//String sudokuInput = "000820090500000000308040007100000040006402503000090010093004000004035200000700900";
 		
 		readSudoku(sudokuInput);
 		System.out.println("Initial State:");
 		printSudoku();
 		
 		solveSudoku();
+		input.close();
 		
 		System.out.printf("%n Solved:%n");
 		printSudoku();
-		System.out.println(checkSudoku());
+		checkSudoku();
 	}
 
 }
 
-class Coordinate {
-	
-	int rowNumber;
-	int columnNumber;
-	int blockNumber;
-	int assignedValue;
-	List<Integer> possibleValueList = new ArrayList<>();
-	
-	public Coordinate(int coordNum) {
-		rowNumber = coordNum / 9;
-		columnNumber = coordNum % 9;
-		blockNumber = (rowNumber / 3)*3 + (columnNumber / 3);
-	}
-
-	public int getAssignedValue() {
-		return assignedValue;	
-	}
-	
-	public List<Integer> getPossibleValueList() {
-		return possibleValueList;
-	}
-	
-	public int getRowNumber() {
-		return rowNumber;
-	}
-	
-	public int getColNumber() {
-		return columnNumber;
-	}
-	
-	public int getBlockNumber() {
-		return blockNumber;
-	}
-	
-	public void printCoordData() {
-		System.out.printf("row: %d, col: %d, block: %d, value: %d, possibilites: ", rowNumber,columnNumber,blockNumber,assignedValue);
-		System.out.println(possibleValueList);
-	}
-	
-	public void assignValue(int value) {
-		assignedValue = value;
-		if (value == 0) {
-			possibleValueList.addAll(Arrays.asList(1,2,3,4,5,6,7,8,9));
-		} else {
-			possibleValueList.clear();
-		}
-	}
-	
-	public void setPossibilites(ArrayList<Integer> possibilities) {
-		possibleValueList = possibilities;
-		// check change
-	}
-	
-	public void removePos(int posValue) {
-		boolean removal = possibleValueList.remove(Integer.valueOf(posValue));
-		
-		if (removal) {
-			SudokuSolverRequired.change = true;
-		}
-	}
-	
-	public void printCoord() {
-		if(assignedValue == 0) {
-			System.out.print(" ");
-		}else {				
-			System.out.print(assignedValue);
-		}
-	}
-	
-	public void printBoxPart() {
-		if (columnNumber % 3 == 2) {
-			System.out.print("|");
-		} else {
-			System.out.print(" ");
-		}
-	}
-	
-
-}
