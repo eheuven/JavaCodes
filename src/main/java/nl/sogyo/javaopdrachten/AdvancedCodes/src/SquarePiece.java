@@ -1,4 +1,5 @@
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 public class SquarePiece {
 	int rowNumber;
@@ -80,10 +81,12 @@ public class SquarePiece {
 			int gapValue = getValue();
 			setValue(adjacentPieces.get(direction).getValue());
 			adjacentPieces.get(direction).setValue(gapValue);
+			return adjacentPieces.get(direction);
 		}else {
 			System.out.println("Piece does not exist"); 
+			return this;
 		}
-		return adjacentPieces.get(direction);
+		
 	}
 	
 	public SquarePiece switchPieces(SquarePiece tile) {
@@ -91,6 +94,15 @@ public class SquarePiece {
 		tile.setValue(getValue());
 		setValue(tileValue);
 		return tile;
+	}
+
+	public String getDirection(SquarePiece piece) {
+		for(Entry<String, SquarePiece> entry : adjacentPieces.entrySet()) {
+			if(entry.getValue() == piece) {
+				return entry.getKey();
+			}
+		}
+		return null;
 	}
 
 

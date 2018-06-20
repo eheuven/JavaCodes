@@ -16,67 +16,145 @@ public class FifteenSolver {
 		 * solve first column the same way
 		 * 2x2 puzzle: rotate clockwise or counterclockwise
 		 */
+		gap = moveNumToPosition(gap,placeOfValue(1), tileList.get(0)); 
+		gap = moveNumToPosition(gap,placeOfValue(2), tileList.get(1));
+		gap = moveNumToPosition(gap,placeOfValue(3), tileList.get(7));
+		gap = moveNumToPosition(gap,placeOfValue(4), tileList.get(11));
 		
-		gap = moveGapToPosition(gap,tileList.get(10));
-		moveNumToPosition(gap,tileList.get(10), tileList.get(1));
+		
 
 		System.out.println("print");
 	}
 	
+	private SquarePiece placeOfValue(int i) {
+		for (SquarePiece piece : tileList) {
+			if(piece.getValue() == i) {
+				return piece;
+			}
+		}
+		return null;
+	}
+
 	private SquarePiece moveGapToPosition(SquarePiece from, SquarePiece to) {
 		SquarePiece current = from;
+		SquarePiece previous = null;
+		int stuckNr = 0;
+		
 		while(current != to) {
-			current = current.switchPieces(nextRoutePiece(current,to));
+			String direction = nextRouteDirection(current,to); 
+			if (direction.equals("stuck")) {
+				stuckNr ++;
+				System.out.print(stuckNr);
+				if (stuckNr == 1 && previous != null) {
+					previous.setMoveable(true); //stuck once: enable moving back and look again
+				}else {
+					break;
+				}
+				
+			}else {
+				SquarePiece movedPiece = current.moveAdjecentPiece(direction); 
+				System.out.print(direction + " ");
+				
+				if(previous != null) {
+					previous.setMoveable(true);
+				}
+				previous = current; current = movedPiece;
+				previous.setMoveable(false);
+			}
+		}
+		if(stuckNr > 1) {
+			return null;
+		}else if(previous != null) {
+			previous.setMoveable(true);
 		}
 		return current;
 	}
 
-	public SquarePiece nextRoutePiece(SquarePiece piece, SquarePiece destination) {
-		String[] horMoves =  {"left","right","above","under"};
-		String[] vertMoves =  {"above","under","left","right"};
+	public String nextRouteDirection(SquarePiece from, SquarePiece destination) {
+		String[] horMoves =  {"left","right"};
+		String[] vertMoves =  {"above","under"};
+		String direction = "";
 		
-		if(piece != destination) {
-			piece = moveDirection(piece,destination.getColNumber(), piece.getColNumber(),horMoves);
-			piece = moveDirection(piece,destination.getRowNumber(), piece.getRowNumber(),vertMoves);
-		}
-		return piece;
-	}
-
-	private SquarePiece moveDirection(SquarePiece piece,int destinationNum,int thisNum, String[] directions) {	
-		if(thisNum == destinationNum) {
-			return piece;
-		}
-		if(thisNum > destinationNum && piece.adjacentPieceMoveable(directions[0])) {
-			return piece.getAdjecentPiece(directions[0]);
-		} else if(thisNum < destinationNum && piece.adjacentPieceMoveable(directions[1])) {
-			return piece.getAdjecentPiece(directions[1]);
-		} else {
-			if(piece.adjacentPieceMoveable(directions[2])) {
-				return piece.getAdjecentPiece(directions[2]);
-			}else {
-				return piece.getAdjecentPiece(directions[3]);
+		if(from != destination) {
+			direction = nextDirection(from,from.getColNumber(),destination.getColNumber(), horMoves);
+			if (direction == null || direction == "other") {
+				direction = nextDirection(from,from.getRowNumber(),destination.getRowNumber(), vertMoves);
+				if (direction == null) {
+					direction = forceMove(from,vertMoves);
+				}else if(direction == "other") {
+					direction = forceMove(from,horMoves);
+					if (direction == "stuck") {
+						direction = forceMove(from,vertMoves);
+					}
+				}
 			}
 		}
+		return direction;
+	}
+
+	private String nextDirection(SquarePiece piece, int thisNum, int destinationNum, String[] directions) {	
+		if(thisNum == destinationNum) {
+			return null;
+		}
+		if(thisNum > destinationNum && piece.adjacentPieceMoveable(directions[0])) {
+			return directions[0];
+		} else if(thisNum < destinationNum && piece.adjacentPieceMoveable(directions[1])) {
+			return directions[1];
+		} else {
+			return "other";
+			
+		}
 	}
 	
+	private String forceMove(SquarePiece piece, String[] directions) {
+		if(piece.adjacentPieceMoveable(directions[0])) {
+			return directions[0];
+		}else if(piece.adjacentPieceMoveable(directions[1])){
+			return directions[1];
+		}else {
+			return "stuck";
+		}
+	}
 	
-	
-	private void moveNumToPosition(SquarePiece gap, SquarePiece from, SquarePiece to) { // in progress
-		// piece moves back one place in gap path if gap reaches
-		// gap in front of next place --> switch (also switch forbidden coord)
-		// forbidden coords: currentvaluecoord + placed list
-		
+
+	private SquarePiece moveNumToPosition(SquarePiece gap, SquarePiece from, SquarePiece to) {
+		SquarePiece prevPlaced = null;
 		from.setMoveable(false);
-		gap = moveGapToPosition(gap,nextRoutePiece(from,to));
+		int count = 0;
 		
-		// movingCoord.moveable = false
-		
-		
-		// gap.moveGapTo(movingCoordRoute[i]) <-- based on gap moving
-		// movingCoord.moveable = true
-		// movingCoord = gap.moveAdjecentPiece(movingCoord)
-		//i++
-		
+		while(from != to) {
+			if(count > 9) {
+				System.out.println("Error: to many runs");
+				break;
+			} 
+			gap = moveGapToPosition(gap,from.getAdjecentPiece(nextRouteDirection(from,to)));// stuck: enable moving back and look again
+			
+			if(gap == null) {
+				prevPlaced = placeOfValue(from.getValue()-1); // stuck twice: enable moving previous place num and look again
+				prevPlaced.setMoveable(true);
+				gap = placeOfValue(0);
+				System.out.println(from.getValue());
+			} else {
+
+				from.setMoveable(true);
+				
+				String gapDirection = gap.getDirection(from);
+				from = gap;
+				gap = gap.moveAdjecentPiece(gapDirection);
+				
+				System.out.print(gapDirection + " ");
+				for(SquarePiece piece: tileList) {
+					piece.printGridPart();
+				}
+				
+				from.setMoveable(false);
+			}
+		}
+		if(prevPlaced == null) {
+			return gap;
+		}else {
+			return moveNumToPosition(gap,placeOfValue(from.getValue()-1), prevPlaced);
+		}
 	}
 
 	

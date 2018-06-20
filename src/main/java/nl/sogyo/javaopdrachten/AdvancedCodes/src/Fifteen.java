@@ -18,7 +18,7 @@ public class Fifteen {
 				
 			while(unsolved()) {
 				computer.nextMove(gap);
-				printGrid();
+				//printGrid();
 				break; // infinite loop
 			}
 			System.out.println("Computer finished solving the puzzle!");
