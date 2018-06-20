@@ -12,25 +12,22 @@ public class Fifteen {
 		SquarePiece gap = findGap();
 		printGrid();
 		
-		System.out.printf("Let the computer solve this? (y/n) ");
-		if(sc.nextLine().equals("y")) {
+		//System.out.printf("Let the computer solve this? (y/n) ");
+		//if(sc.nextLine().equals("y")) {
 			FifteenSolver computer = new FifteenSolver(pieces);
 				
-			while(unsolved()) {
-				computer.nextMove(gap);
-				//printGrid();
-				break; // infinite loop
-			}
+			computer.solve(gap);
+
 			System.out.println("Computer finished solving the puzzle!");
 			
-		} else {
+		/*} else {
 			while(unsolved()) {
 				System.out.printf("Move which piece relative to the gap? (left/right/above/under) ");
 				gap = gap.moveAdjecentPiece(sc.next());
 				printGrid();
 			}
 			System.out.println("You solved the puzzle!");
-		}
+		}*/
 		sc.close();
 	}
 

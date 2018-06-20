@@ -45,7 +45,7 @@ public class SquarePiece {
 		return colNumber;
 	}
 	
-	private boolean isMoveable() {
+	public boolean isMoveable() {
 		return moveable;
 	}
 	

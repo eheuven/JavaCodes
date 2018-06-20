@@ -7,7 +7,7 @@ public class FifteenSolver {
 		tileList = pieces;
 	}
 
-	public void nextMove(SquarePiece gap) {
+	public void solve(SquarePiece gap) {
 		/*
 		 * solve first row first:
 		 * - line numbers up except last 2
@@ -36,18 +36,31 @@ public class FifteenSolver {
 	}
 
 	private SquarePiece moveGapToPosition(SquarePiece from, SquarePiece to) {
+		from.setMoveable(true);
 		SquarePiece current = from;
 		SquarePiece previous = null;
 		int stuckNr = 0;
+		int count = 0;
 		
 		while(current != to) {
+			count++;
+			if(count > 20) {
+				System.out.println("Error: space not reachable in 20 steps");
+				break;
+			} 
+			
 			String direction = nextRouteDirection(current,to); 
 			if (direction.equals("stuck")) {
 				stuckNr ++;
 				System.out.print(stuckNr);
-				if (stuckNr == 1 && previous != null) {
-					previous.setMoveable(true); //stuck once: enable moving back and look again
+				if (previous != null) {
+					if (stuckNr == 1 && previous != null) {
+						previous.setMoveable(true); //stuck once: enable moving back and look again
+					}else {
+						break;
+					}
 				}else {
+					stuckNr = 3;
 					break;
 				}
 				
@@ -118,28 +131,37 @@ public class FifteenSolver {
 	
 
 	private SquarePiece moveNumToPosition(SquarePiece gap, SquarePiece from, SquarePiece to) {
+		SquarePiece current = from;
 		SquarePiece prevPlaced = null;
-		from.setMoveable(false);
+		current.setMoveable(false);
 		int count = 0;
 		
-		while(from != to) {
+		while(current != to) {
+			count++;
 			if(count > 9) {
 				System.out.println("Error: to many runs");
 				break;
 			} 
-			gap = moveGapToPosition(gap,from.getAdjecentPiece(nextRouteDirection(from,to)));// stuck: enable moving back and look again
+			gap = moveGapToPosition(gap,current.getAdjecentPiece(nextRouteDirection(current,to)));
+			
+			if(count > 7) {
+				System.out.printf("%d %b%n",gap.getValue(),gap.isMoveable());
+				for(SquarePiece piece : current.adjacentPieces.values()) {
+					System.out.printf("%d %b",piece.getValue(),piece.isMoveable());
+				}
+			}
 			
 			if(gap == null) {
-				prevPlaced = placeOfValue(from.getValue()-1); // stuck twice: enable moving previous place num and look again
+				prevPlaced = placeOfValue(current.getValue()-1); 
 				prevPlaced.setMoveable(true);
 				gap = placeOfValue(0);
-				System.out.println(from.getValue());
+				System.out.println(current.getValue());
 			} else {
 
-				from.setMoveable(true);
+				current.setMoveable(true); // TODO disable gap before finding next of this number
 				
-				String gapDirection = gap.getDirection(from);
-				from = gap;
+				String gapDirection = gap.getDirection(current);
+				current = gap;
 				gap = gap.moveAdjecentPiece(gapDirection);
 				
 				System.out.print(gapDirection + " ");
@@ -147,13 +169,14 @@ public class FifteenSolver {
 					piece.printGridPart();
 				}
 				
-				from.setMoveable(false);
+				gap.setMoveable(false);
+				current.setMoveable(false);
 			}
 		}
 		if(prevPlaced == null) {
 			return gap;
 		}else {
-			return moveNumToPosition(gap,placeOfValue(from.getValue()-1), prevPlaced);
+			return moveNumToPosition(gap,placeOfValue(current.getValue()-1), prevPlaced);
 		}
 	}
 
