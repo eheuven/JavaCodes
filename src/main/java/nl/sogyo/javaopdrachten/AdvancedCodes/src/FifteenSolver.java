@@ -23,7 +23,7 @@ public class FifteenSolver {
 		
 		
 
-		System.out.println("print");
+		//System.out.println("print");
 	}
 	
 	private SquarePiece placeOfValue(int i) {
@@ -39,29 +39,24 @@ public class FifteenSolver {
 		from.setMoveable(true);
 		SquarePiece current = from;
 		SquarePiece previous = null;
-		int stuckNr = 0;
-		int count = 0;
+		boolean stuckBefore = false;
 		
-		while(current != to) {
-			count++;
+		for(int count = 1; current != to; count++) {
 			if(count > 20) {
-				System.out.println("Error: space not reachable in 20 steps");
+				to.setMoveable(false);
 				break;
 			} 
 			
 			String direction = nextRouteDirection(current,to); 
 			if (direction.equals("stuck")) {
-				stuckNr ++;
-				System.out.print(stuckNr);
 				if (previous != null) {
-					if (stuckNr == 1 && previous != null) {
-						previous.setMoveable(true); //stuck once: enable moving back and look again
-					}else {
-						break;
+					previous.setMoveable(true);
+					if (stuckBefore) {
+						return null;
 					}
+					stuckBefore = true;
 				}else {
-					stuckNr = 3;
-					break;
+					return null;
 				}
 				
 			}else {
@@ -75,9 +70,8 @@ public class FifteenSolver {
 				previous.setMoveable(false);
 			}
 		}
-		if(stuckNr > 1) {
-			return null;
-		}else if(previous != null) {
+		
+		if(previous != null) {
 			previous.setMoveable(true);
 		}
 		return current;
@@ -86,7 +80,7 @@ public class FifteenSolver {
 	public String nextRouteDirection(SquarePiece from, SquarePiece destination) {
 		String[] horMoves =  {"left","right"};
 		String[] vertMoves =  {"above","under"};
-		String direction = "";
+		String direction = null;
 		
 		if(from != destination) {
 			direction = nextDirection(from,from.getColNumber(),destination.getColNumber(), horMoves);
@@ -131,48 +125,53 @@ public class FifteenSolver {
 	
 
 	private SquarePiece moveNumToPosition(SquarePiece gap, SquarePiece from, SquarePiece to) {
+		
 		SquarePiece current = from;
 		SquarePiece prevPlaced = null;
+		SquarePiece unreachableGap = null;
 		current.setMoveable(false);
-		int count = 0;
 		
 		while(current != to) {
-			count++;
-			if(count > 9) {
-				System.out.println("Error: to many runs");
-				break;
-			} 
-			gap = moveGapToPosition(gap,current.getAdjecentPiece(nextRouteDirection(current,to)));
-			
-			if(count > 7) {
-				System.out.printf("%d %b%n",gap.getValue(),gap.isMoveable());
-				for(SquarePiece piece : current.adjacentPieces.values()) {
-					System.out.printf("%d %b",piece.getValue(),piece.isMoveable());
-				}
+			String nextDirection = nextRouteDirection(current,to);
+			if(nextDirection.equals("stuck")){
+				gap.setMoveable(true);
+				nextDirection = nextRouteDirection(current,to);
 			}
+			SquarePiece nextTile = current.getAdjecentPiece(nextDirection);
+						
+			gap = moveGapToPosition(gap,nextTile);
 			
-			if(gap == null) {
-				prevPlaced = placeOfValue(current.getValue()-1); 
-				prevPlaced.setMoveable(true);
-				gap = placeOfValue(0);
-				System.out.println(current.getValue());
-			} else {
-
-				current.setMoveable(true); // TODO disable gap before finding next of this number
+			if (!nextTile.isMoveable()) {
+				unreachableGap = nextTile;
+			} else { 
 				
-				String gapDirection = gap.getDirection(current);
-				current = gap;
-				gap = gap.moveAdjecentPiece(gapDirection);
-				
-				System.out.print(gapDirection + " ");
-				for(SquarePiece piece: tileList) {
-					piece.printGridPart();
+				if(unreachableGap != null){
+					unreachableGap.setMoveable(true);
+					unreachableGap = null;
 				}
-				
-				gap.setMoveable(false);
-				current.setMoveable(false);
+
+				if(gap == null) {
+					prevPlaced = placeOfValue(current.getValue()-1); 
+					prevPlaced.setMoveable(true);
+					gap = placeOfValue(0);
+				} else {
+					current.setMoveable(true); 
+					
+					String gapDirection = gap.getDirection(current);
+					current = gap;
+					gap = gap.moveAdjecentPiece(gapDirection);
+					
+					System.out.print(gapDirection + " ");
+					for(SquarePiece piece: tileList) {
+						piece.printGridPart();
+					}
+					
+					gap.setMoveable(false);
+					current.setMoveable(false);
+				}
 			}
 		}
+			
 		if(prevPlaced == null) {
 			return gap;
 		}else {
