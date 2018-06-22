@@ -86,8 +86,15 @@ public class SquarePiece {
 			System.out.println("Piece does not exist"); 
 			return this;
 		}
-		
 	}
+	
+	public boolean hasMoveableAdjecentPiece(String direction) {
+		if (adjacentPieces.containsKey(direction)){
+			return adjacentPieces.get(direction).isMoveable();
+		}
+		return false;
+	}
+	
 	
 	public SquarePiece switchPieces(SquarePiece tile) {
 		int tileValue = tile.getValue();

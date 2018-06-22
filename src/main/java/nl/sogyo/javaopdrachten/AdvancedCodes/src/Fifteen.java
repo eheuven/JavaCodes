@@ -12,13 +12,13 @@ public class Fifteen {
 		SquarePiece gap = findGap();
 		printGrid();
 		
-		System.out.printf("Let the computer solve this? (y/n) ");
-		if(sc.nextLine().equals("y")) {
+		//System.out.printf("Let the computer solve this? (y/n) ");
+		//if(sc.nextLine().equals("y")) {
 			FifteenSolver computer = new FifteenSolver(pieces);
 				
 			computer.solve(gap);
 
-			System.out.println("Computer finished solving the puzzle!");
+			/*ystem.out.println("Computer finished solving the puzzle!");
 			
 		} else {
 			while(unsolved()) {
@@ -29,7 +29,7 @@ public class Fifteen {
 			System.out.println("You solved the puzzle!");
 		
 		sc.close();
-		}
+		}*/
 	}
 
 	private static void makePieces() {
