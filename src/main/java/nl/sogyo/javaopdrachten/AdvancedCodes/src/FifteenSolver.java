@@ -18,53 +18,37 @@ public class FifteenSolver {
 		 * solve first column the same way
 		 * 2x2 puzzle: rotate clockwise or counterclockwise
 		 */
-		// line numbers up except last 2
-		gap = moveNumToPosition(gap,placeOfValue(1), tileList.get(1-1)); 
-		gap = moveNumToPosition(gap,placeOfValue(2), tileList.get(2-1));
-		
-		// before last number at place of last number(top right corner) & last number below this then rotate into position
-		gap = moveLastTwo(gap,3,4);
-		//gap = rotateIntoPosition(gap,3,4);
-		
-		// first column
-		gap = moveNumToPosition(gap,placeOfValue(5), tileList.get(5-1));
-		gap = moveLastTwo(gap,9,13);
-		//gap = rotateIntoPosition(gap,9,13);
-		
-		//3x3
-		gap = moveNumToPosition(gap,placeOfValue(6), tileList.get(6-1));
-		gap = moveLastTwo(gap,7,8);
-		//gap = rotateIntoPosition(gap,7,8);
-		
-		gap = moveLastTwo(gap,10,14); // places wrong??
-		/*
-		if (gap != null) {
-			gap = rotateIntoPosition(gap,10,14);
-			System.out.println("computer solved it");
-		} else {
-			placeOfValue(14).setMoveable(true);
-			placeOfValue(10).setMoveable(true);
-			
-			gap = rotateNumbers("left");
-			gap = moveLastTwo(gap,10,14);
 
-			if (gap != null) {
-			System.out.println("computer solved it after rotation");
-			}else {
-				placeOfValue(14).setMoveable(true);
-				placeOfValue(10).setMoveable(true);
-				
-				gap = rotateNumbers("right");
-				gap = moveLastTwo(gap,10,14);
-				
-				if (gap!= null) {
-				System.out.println("two rotations");
-				}else {
-					System.out.println("not solved");
-				}
-				
+		// 4x4
+		gap = moveNumToPosition(gap,placeOfValue(1), tileList.get(0)); 
+		gap = moveNumToPosition(gap,placeOfValue(2), tileList.get(1));
+		gap = moveLastTwo(gap,3,4);
+		gap = moveNumToPosition(gap,placeOfValue(5), tileList.get(4));
+		gap = moveLastTwo(gap,9,13);
+
+		//3x3
+		gap = moveNumToPosition(gap,placeOfValue(6), tileList.get(5));
+		gap = moveLastTwo(gap,7,8);
+		gap = moveLastTwo(gap,10,14);
+		
+		// 2x2
+		while(tileList.get(10).getValue() != 11) {
+			gap = rotateNumbers("left");
+		}
+		if(tileList.get(11).getValue() == 12 || tileList.get(14).getValue() == 15) {
+			String gapDirection = gap.getDirection(tileList.get(15));
+			gap.moveAdjecentPiece(gapDirection);
+			System.out.print(gapDirection + " ");
+			for(SquarePiece piece: tileList) {
+				piece.printGridPart();
 			}
-		}*/
+			
+			System.out.println("Computer finished solving the puzzle!");
+		}else {
+			System.out.println("Computer failed solving the puzzle.");
+		}
+		
+		
 	}
 
 	private SquarePiece moveLastTwo(SquarePiece gap, int value1, int value2) {
@@ -83,14 +67,11 @@ public class FifteenSolver {
 				placeOfValue(value1).setMoveable(true);
 				placeOfValue(value2).setMoveable(true);
 				
-				if(tileList.get(value1-1).getValue() == value1) {
+				if(tileList.get(value1+4).getValue() == value1) {
 					gap = rotateNumbers("left");
-					System.out.println("rotate left");
 				} else {
 					gap = rotateNumbers("right");
-					System.out.println("rotate right");
 				}
-				gap = moveLastTwo(gap,value1,value2);
 				
 			} else {
 				break;
@@ -98,13 +79,7 @@ public class FifteenSolver {
 		}
 		gap = rotateIntoPosition(gap,value1,value2);
 		
-		if(i>0) {
-			System.out.printf("rotated %d times to solve",i);
-		}else {
-			System.out.println("solved");
-		}
-		
-		return gap;// places wrong??
+		return gap;
 	}
 	
 
@@ -132,7 +107,6 @@ public class FifteenSolver {
 			String direction = nextRouteDirection(current,to); 
 			if (direction.equals("stuck")) {
 				if (previous != null) {
-					System.out.printf("stuck, enable %d (moving backward)", previous.getValue());
 					
 					previous.setMoveable(true);
 					if (stuckBefore) {
@@ -169,13 +143,8 @@ public class FifteenSolver {
 		String direction = null;
 		
 		if(from != destination) {
-			try {
+			
 			direction = nextDirection(from,from.getColNumber(),destination.getColNumber(), horMoves);
-			}catch(Exception e) {
-				System.out.println(from);
-				System.out.println(from.getColNumber());
-				System.out.println(destination.getColNumber());
-			}
 			
 			if (direction == null || direction == "other") {
 				direction = nextDirection(from,from.getRowNumber(),destination.getRowNumber(), vertMoves);
@@ -228,33 +197,21 @@ public class FifteenSolver {
 		int counter = 0;
 		int prevNumber = 0;
 		
-		System.out.printf("start moving %d previous: ", from.getValue());
 		if (prevAssignedTile != null) {
 			prevNumber = prevAssignedTile.getValue();
-			System.out.println(prevAssignedTile.getValue());
 		}
-		
-		
 
-		while(current != to) {
-			if (prevAssignedTile != null) {
-			System.out.printf("prevTile = %d%n",prevAssignedTile.getValue());
-			}
-			
+		while(current != to) {		
 			counter++;
 			if (counter > 9) {
-				System.out.println("move tile steps > 9");
 				break;
 			}
 			
 			String nextDirection = nextRouteDirection(current,to);
-			System.out.println("nextD: " + nextDirection);
+
 			if(nextDirection.equals("stuck")){
 				gap.setMoveable(true);
-				System.out.println("gap enabled");
-				
 				nextDirection = nextRouteDirection(current,to);
-				System.out.println("new direction: " + nextDirection);
 			}
 			SquarePiece nextTile = current.getAdjecentPiece(nextDirection);
 						
@@ -272,12 +229,8 @@ public class FifteenSolver {
 				if(gap == null && prevAssignedTile != null) {
 					prevAssignedTile.setMoveable(true);
 					prevNumber = prevAssignedTile.getValue();
-					System.out.printf("%nstuck twice, enable moving: %d%n",prevNumber);
 					gap = placeOfValue(0);
 					gap.setMoveable(false);
-					for(SquarePiece tile : gap.adjacentPieces.values()) {
-						System.out.printf("(%d %b) ",tile.getValue(),tile.isMoveable());
-					}
 					
 				} else {
 					
@@ -300,24 +253,22 @@ public class FifteenSolver {
 		
 		SquarePiece previousTile = prevAssignedTile;
 		prevAssignedTile = current;
-		System.out.printf("%d placed correctely%n",current.getValue());
 		
 		if(previousTile != null) {
-			System.out.printf("previous tile = %d%n",prevNumber); 
 			
 			if(previousTile.getValue() != prevNumber) {
-				System.out.print("redo: ");
-				System.out.println(prevNumber);
 				redo++;
 				return moveNumToPosition(gap,placeOfValue(prevNumber), previousTile);
 			}
 		}
-		System.out.print("doorgaan");
+		
+		redo = 0;
 		return gap;
 		
 	}
 
 	private SquarePiece rotateIntoPosition(SquarePiece gap,int value1, int value2) {
+		
 		
 		gap = moveGapToPosition(gap,tileList.get(value2-1));
 		placeOfValue(value2).setMoveable(true);
@@ -343,17 +294,10 @@ public class FifteenSolver {
 
 	private SquarePiece swap(SquarePiece gap, int value) {
 		
-		try {
-		String gapDirection = gap.getDirection(placeOfValue(value)); // zeropoint error hier
+		String gapDirection = gap.getDirection(placeOfValue(value));
 		System.out.print(gapDirection + " ");
 		
 		gap = gap.moveAdjecentPiece(gapDirection); 
-
-		}catch(Exception e) {
-			System.out.println(value);
-			System.out.println(placeOfValue(value));
-			System.out.println(gap.getDirection(placeOfValue(value)));
-		}
 
 		for(SquarePiece piece: tileList) {
 			piece.printGridPart();
@@ -362,8 +306,6 @@ public class FifteenSolver {
 	}
 	
 	private SquarePiece rotateNumbers(String direction) {
-		
-		System.out.println("rotate");
 		
 		String reverseDirection = "left";
 		SquarePiece gap = placeOfValue(0);
@@ -384,13 +326,7 @@ public class FifteenSolver {
 			end = gap.getAdjecentPiece("under");
 		}
 		
-		int i = 0;
 		while(gap != end) {
-			i++;
-			if (i>6) {
-				System.out.println("rotate fails");
-				break;
-			}
 			
 			if(gap.hasMoveableAdjecentPiece(direction)) {
 				gap = gap.moveAdjecentPiece(direction); 
