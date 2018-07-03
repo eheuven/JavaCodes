@@ -18,8 +18,7 @@ public class Fifteen {
 				
 			computer.solve(gap);
 
-			/*ystem.out.println("Computer finished solving the puzzle!");
-			
+			/*
 		} else {
 			while(unsolved()) {
 				System.out.printf("Move which piece relative to the gap? (left/right/above/under) ");

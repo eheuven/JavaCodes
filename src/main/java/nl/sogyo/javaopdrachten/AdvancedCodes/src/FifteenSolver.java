@@ -1,46 +1,48 @@
 import java.util.ArrayList;
+import java.util.Map.Entry;
 
 public class FifteenSolver {
 	ArrayList<SquarePiece> tileList;
 	SquarePiece prevAssignedTile;
+	SquarePiece gap;
 	int redo = 0;
 	
 	public FifteenSolver(ArrayList<SquarePiece> pieces) {
 		tileList = pieces;
 	}
 
-	public void solve(SquarePiece gap) {
+	public void solve(SquarePiece givenGap) {
 		/*
-		 * solve first row first:
-		 * - line numbers up except last 2
+		 * solving tricks:
+		 * - line numbers up except last 2 of row/column
 		 * - before last number at place of last number(top right corner) & last number below this
 		 * - "rotate" the last 2 numbers
-		 * solve first column the same way
-		 * 2x2 puzzle: rotate clockwise or counterclockwise
 		 */
-
+		gap = givenGap;
+		
 		// 4x4
-		gap = moveNumToPosition(gap,placeOfValue(1), tileList.get(0)); 
-		gap = moveNumToPosition(gap,placeOfValue(2), tileList.get(1));
-		gap = moveLastTwo(gap,3,4);
-		gap = moveNumToPosition(gap,placeOfValue(5), tileList.get(4));
-		gap = moveLastTwo(gap,9,13);
-
+		moveNumToPosition(placeOfValue(1), tileList.get(0)); 
+		moveNumToPosition(placeOfValue(2), tileList.get(1));
+		
+		moveLastTwo(3,4);
+		moveNumToPosition(placeOfValue(5), tileList.get(4));
+		moveLastTwo(9,13);
+		
 		//3x3
-		gap = moveNumToPosition(gap,placeOfValue(6), tileList.get(5));
-		gap = moveLastTwo(gap,7,8);
-		gap = moveLastTwo(gap,10,14);
+		moveNumToPosition(placeOfValue(6), tileList.get(5));
+		moveLastTwo(7,8);
+		moveLastTwo(10,14);
 		
 		// 2x2
 		while(tileList.get(10).getValue() != 11) {
-			gap = rotateNumbers("left");
+			rotateNumbers("left");
 		}
 		if(tileList.get(11).getValue() == 12 || tileList.get(14).getValue() == 15) {
 			String gapDirection = gap.getDirection(tileList.get(15));
-			gap.moveAdjecentPiece(gapDirection);
-			System.out.print(gapDirection + " ");
-			for(SquarePiece piece: tileList) {
-				piece.printGridPart();
+			
+			if (gapDirection != null) {
+				gapSwapTo(gapDirection);
+				printGrid();
 			}
 			
 			System.out.println("Computer finished solving the puzzle!");
@@ -51,7 +53,14 @@ public class FifteenSolver {
 		
 	}
 
-	private SquarePiece moveLastTwo(SquarePiece gap, int value1, int value2) {
+	private void moveLastTwo(int value1, int value2) {
+		if(placeOfValue(value1) == tileList.get(value1-1) && placeOfValue(value2) == tileList.get(value2-1)) {
+			placeOfValue(value1).setMoveable(false);
+			placeOfValue(value2).setMoveable(false);
+			return;
+		}
+		
+		
 		int inc = 1;
 		if((value2 -1) % 4 == 3) { // row +7, column +1
 			inc = 7;
@@ -59,27 +68,27 @@ public class FifteenSolver {
 		
 		int i = 7;
 		for(i = 0; i <5; i++) {
-			gap = moveNumToPosition(gap,placeOfValue(value2), tileList.get(value2 + inc)); 
-			gap = moveNumToPosition(gap,placeOfValue(value1), tileList.get(value1 + 4));
+			boolean move1 = moveNumToPosition(placeOfValue(value2), tileList.get(value2 + inc)); 
+			boolean move2 = moveNumToPosition(placeOfValue(value1), tileList.get(value1 + 4));
+			System.out.printf("move 1: %b, move 2: %b%n",move1,move2);
 			
-			if (gap == null) {
-				gap = placeOfValue(0);
+			if (!move1 || !move2) {
 				placeOfValue(value1).setMoveable(true);
 				placeOfValue(value2).setMoveable(true);
 				
 				if(tileList.get(value1+4).getValue() == value1) {
-					gap = rotateNumbers("left");
+					System.out.println("value1 correct placed = right rotate");
+					rotateNumbers("left");
 				} else {
-					gap = rotateNumbers("right");
+					rotateNumbers("right");
 				}
 				
 			} else {
 				break;
 			}
 		}
-		gap = rotateIntoPosition(gap,value1,value2);
-		
-		return gap;
+		rotateIntoPosition(value1,value2);
+
 	}
 	
 
@@ -92,48 +101,53 @@ public class FifteenSolver {
 		return null;
 	}
 
-	private SquarePiece moveGapToPosition(SquarePiece from, SquarePiece to) {
-		from.setMoveable(true);
-		SquarePiece current = from;
+	private boolean moveGapToPosition(SquarePiece to) {
+		gap.setMoveable(true);
 		SquarePiece previous = null;
 		boolean stuckBefore = false;
 		
-		for(int count = 1; current != to; count++) {
+		for(int count = 1; gap != to; count++) {
 			if(count > 20) {
 				to.setMoveable(false);
-				break;
+				
+				if (previous != null) {
+					previous.setMoveable(true);
+				}
+				
+				for(SquarePiece piece: tileList) {
+					piece.printGridPart();
+				}
+				
+				return false;
 			} 
 			
-			String direction = nextRouteDirection(current,to); 
+			String direction = nextRouteDirection(gap,to); 
 			if (direction.equals("stuck")) {
+				
 				if (previous != null) {
-					
 					previous.setMoveable(true);
 					if (stuckBefore) {
-						
-						return null;
+						return false;
 					}
 					stuckBefore = true;
 				}else {
-					return null;
+					return false;
 				}
 				
 			}else {
-				SquarePiece movedPiece = current.moveAdjecentPiece(direction); 
-				System.out.print(direction + " ");
-				
-				if(previous != null) {
+				if (previous != null) {
 					previous.setMoveable(true);
 				}
-				previous = current; current = movedPiece;
+				previous = gap;
+				gapSwapTo(direction);
 				previous.setMoveable(false);
 			}
 		}
 		
-		if(previous != null) {
+		if (previous != null) {
 			previous.setMoveable(true);
 		}
-		return current;
+		return true;
 	}
 
 	public String nextRouteDirection(SquarePiece from, SquarePiece destination) {
@@ -143,8 +157,12 @@ public class FifteenSolver {
 		String direction = null;
 		
 		if(from != destination) {
-			
+			try {
 			direction = nextDirection(from,from.getColNumber(),destination.getColNumber(), horMoves);
+			} catch(Exception e) {
+				from.getColNumber();
+				destination.getColNumber();
+			}
 			
 			if (direction == null || direction == "other") {
 				direction = nextDirection(from,from.getRowNumber(),destination.getRowNumber(), vertMoves);
@@ -155,6 +173,17 @@ public class FifteenSolver {
 					if (direction == "stuck") {
 						direction = forceMove(from,vertMoves);
 					}
+					if (direction == "stuck") {
+					System.out.println(direction);
+					System.out.print("[left ");
+					System.out.print(gap.hasMoveableAdjecentPiece("left"));
+					System.out.print(" right ");
+					System.out.print(gap.hasMoveableAdjecentPiece("right"));
+					System.out.print(" up ");
+					System.out.print(gap.hasMoveableAdjecentPiece("above"));
+					System.out.print(" down ");
+					System.out.print(gap.hasMoveableAdjecentPiece("under"));
+					System.out.print("] ");}
 				}
 			}
 		}
@@ -171,7 +200,6 @@ public class FifteenSolver {
 			return directions[1];
 		} else {
 			return "other";
-			
 		}
 	}
 	
@@ -186,14 +214,19 @@ public class FifteenSolver {
 	}
 	
 
-	private SquarePiece moveNumToPosition(SquarePiece gap, SquarePiece from, SquarePiece to) {
+	private boolean moveNumToPosition(SquarePiece from, SquarePiece to) {
+		SquarePiece gapTile = gap;
+		
 		if (redo > 5) {
-			return null;
+			redo = 0;
+			return false;
 		}
 
 		SquarePiece current = from;
 		SquarePiece unreachableGap = null;
 		current.setMoveable(false);
+		System.out.print(current.getValue()); System.out.println("not moveable");
+		
 		int counter = 0;
 		int prevNumber = 0;
 		
@@ -208,153 +241,218 @@ public class FifteenSolver {
 			}
 			
 			String nextDirection = nextRouteDirection(current,to);
-
+			System.out.println("next:"+nextDirection);
+			
 			if(nextDirection.equals("stuck")){
-				gap.setMoveable(true);
+				gapTile.setMoveable(true);
 				nextDirection = nextRouteDirection(current,to);
 			}
-			SquarePiece nextTile = current.getAdjecentPiece(nextDirection);
-						
-			gap = moveGapToPosition(gap,nextTile);
-			
-			if (!nextTile.isMoveable()) {
-				unreachableGap = nextTile;
-			} else { 
-				
-				if(unreachableGap != null){
-					unreachableGap.setMoveable(true);
-					unreachableGap = null;
+			try {
+				SquarePiece nextTile = current.getAdjecentPiece(nextDirection); //null
+				if(prevAssignedTile != null) {
+				System.out.println("prevAssignedtile:" + String.valueOf(prevAssignedTile.getValue()));
 				}
-
-				if(gap == null && prevAssignedTile != null) {
-					prevAssignedTile.setMoveable(true);
-					prevNumber = prevAssignedTile.getValue();
-					gap = placeOfValue(0);
-					gap.setMoveable(false);
+				System.out.println("nexttile:" + String.valueOf(nextTile.getValue()));
+				System.out.println("thistile:"+ String.valueOf(current.getValue()));
+				System.out.println("gaptile:"+ String.valueOf(gapTile.getValue()));
+				
+			
+				boolean gapMove = moveGapToPosition(nextTile); 
+				gapTile = gap;
+						
+				System.out.println("gaptile:"+ String.valueOf(gapTile.getValue()));
+				
+				
+				if (!nextTile.isMoveable()) {
+					unreachableGap = nextTile;
+					//enable previous place
+					System.out.print(unreachableGap.getValue()); System.out.println(" unreachable");
+				} else { 
 					
-				} else {
 					
-					current.setMoveable(true); 
-					
-					String gapDirection = gap.getDirection(current);
-					current = gap;
-					gap = gap.moveAdjecentPiece(gapDirection);
-					
-					System.out.print(gapDirection + " ");
-					for(SquarePiece piece: tileList) {
-						piece.printGridPart();
+	
+					if(!gapMove && prevAssignedTile != null) {
+						prevAssignedTile.setMoveable(true);
+						prevNumber = prevAssignedTile.getValue();
+						gapTile = placeOfValue(0);
+						gapTile.setMoveable(false);
+						System.out.println("stuck:enable " + String.valueOf(prevNumber));
+						
+						
+					} else {
+						
+						if(unreachableGap != null){
+							System.out.print(unreachableGap.getValue()); System.out.println(" moveable again");
+							unreachableGap.setMoveable(true);
+							unreachableGap = null;
+							
+						}
+						
+						current.setMoveable(true); 
+						
+						String gapDirection = gapTile.getDirection(current);
+						current = gapTile;
+						
+						if(!gapTile.hasMoveableAdjecentPiece(gapDirection)) {
+							throw new NullPointerException();
+						}
+						
+						gapTile = gapTile.moveAdjecentPiece(gapDirection);
+						gap = gapTile;
+						
+						System.out.print(gapDirection + " ");
+						for(SquarePiece piece: tileList) {
+							piece.printGridPart();
+						}
+						
+						gapTile.setMoveable(false);
+						current.setMoveable(false);
 					}
 					
-					gap.setMoveable(false);
-					current.setMoveable(false);
+					
 				}
+			} catch (Exception e) {
+				System.out.print(nextDirection);
+				
+				
+				System.out.print("left ");
+				System.out.print(current.hasMoveableAdjecentPiece("left"));
+				System.out.print(" right ");
+				System.out.print(current.hasMoveableAdjecentPiece("right"));
+				System.out.print(" up ");
+				System.out.print(current.hasMoveableAdjecentPiece("above"));
+				System.out.print(" down ");
+				System.out.print(current.hasMoveableAdjecentPiece("under"));
+				System.out.print(" ");
+				
+				throw e;
 			}
 		}
 		
+		gap = gapTile;
 		SquarePiece previousTile = prevAssignedTile;
 		prevAssignedTile = current;
+		System.out.println(String.valueOf(current.getValue())+" placed");
 		
 		if(previousTile != null) {
 			
 			if(previousTile.getValue() != prevNumber) {
 				redo++;
-				return moveNumToPosition(gap,placeOfValue(prevNumber), previousTile);
+				return moveNumToPosition(placeOfValue(prevNumber), previousTile);
 			}
 		}
 		
 		redo = 0;
-		return gap;
 		
+		return true;
 	}
 
-	private SquarePiece rotateIntoPosition(SquarePiece gap,int value1, int value2) {
+	private SquarePiece moveTile(SquarePiece tile) {
+		tile.setMoveable(true); 
+		SquarePiece movedTilePlace = gap;
+		gapSwapTo(gap.getDirection(tile));
 		
+		gap.setMoveable(false);
+		movedTilePlace.setMoveable(false);
 		
-		gap = moveGapToPosition(gap,tileList.get(value2-1));
-		placeOfValue(value2).setMoveable(true);
+		printGrid();
+		return movedTilePlace;
+	}
+
+	private void rotateIntoPosition(int value1, int value2) {
+		moveGapToPosition(tileList.get(value2-1));
+		rotateOnce(value1,value2);
 		
-		gap = swap(gap,value1);
-		gap = swap(gap,value2);	
-		
-		placeOfValue(value1).setMoveable(false);
-		
-		gap = moveGapToPosition(gap,tileList.get(value1-1));
-		placeOfValue(value2).setMoveable(true);
-		
-		gap = swap(gap,value1);
-		gap = swap(gap,value2);
-		placeOfValue(value1).setMoveable(false);
+		moveGapToPosition(tileList.get(value1-1));
+		rotateOnce(value1,value2);
 		
 		prevAssignedTile = placeOfValue(value2);
-		System.out.println(prevAssignedTile.getValue());
-		
-		
-		return gap;
-	}
-
-	private SquarePiece swap(SquarePiece gap, int value) {
-		
-		String gapDirection = gap.getDirection(placeOfValue(value));
-		System.out.print(gapDirection + " ");
-		
-		gap = gap.moveAdjecentPiece(gapDirection); 
-
-		for(SquarePiece piece: tileList) {
-			piece.printGridPart();
-		}
-		return gap;
 	}
 	
-	private SquarePiece rotateNumbers(String direction) {
+	private void rotateOnce(int value1, int value2) {
+		placeOfValue(value2).setMoveable(true);
+		placeOfValue(value1).setMoveable(true);//
 		
-		String reverseDirection = "left";
-		SquarePiece gap = placeOfValue(0);
+		System.out.println("start rotation:" + gap.getDirection(placeOfValue(value1)));
+		
+		gapSwapTo(gap.getDirection(placeOfValue(value1)));
+		gapSwapTo(gap.getDirection(placeOfValue(value2)));
+		
+		placeOfValue(value1).setMoveable(false);
+		placeOfValue(value2).setMoveable(false);//
+		
+		printGrid();
+	}
+
+	private void rotateNumbers(String direction) {
 		prevAssignedTile = null;
 		gap.setMoveable(true);
-		redo = 0;
-		
-		if (direction.equals("left")) {
-			reverseDirection = "right";
-		}
-		
-		SquarePiece end = null;
-		if(gap.hasMoveableAdjecentPiece(reverseDirection)){
-			end = gap.getAdjecentPiece(reverseDirection);
-		} else if(gap.hasMoveableAdjecentPiece("above")) {
-			end = gap.getAdjecentPiece("above");
-		} else {
-			end = gap.getAdjecentPiece("under");
-		}
+		SquarePiece end = findEnd(direction);
 		
 		while(gap != end) {
-			
 			if(gap.hasMoveableAdjecentPiece(direction)) {
-				gap = gap.moveAdjecentPiece(direction); 
-				System.out.print(direction + " ");
+				gapSwapTo(direction);
 			} else {
-				if(direction == "left") {
-					direction = "right";
-				}else {
-					direction = "left";
-				}
+				direction = changeDirection(direction);
 				
 				if(gap.hasMoveableAdjecentPiece("above")) {
-					gap = gap.moveAdjecentPiece("above");
-					System.out.print("above ");
+					gapSwapTo("above");
 				} else {
-					gap = gap.moveAdjecentPiece("under");
-					System.out.print("under ");
+					gapSwapTo("under");
 				}
 			}
 		}
 		gap.setMoveable(false);
-
+		printGrid();
+	}
+	
+	private String changeDirection(String direction) {
+		if(direction == "left") {
+			return "right";
+		}else {
+			return "left";
+		}
+	}
+	
+ 	private SquarePiece findEnd(String direction) {
+		if (direction.equals("left")) {
+			if(gap.hasMoveableAdjecentPiece("right")){
+				return gap.getAdjecentPiece("right");
+			}
+		}else {
+			if(gap.hasMoveableAdjecentPiece("left")){
+				return gap.getAdjecentPiece("left");
+			}
+		}	
+			
+		if(gap.hasMoveableAdjecentPiece("above")) {
+			return gap.getAdjecentPiece("above");
+		} else {
+			return gap.getAdjecentPiece("under");
+		}
+	}
+	
+	
+	private void gapSwapTo(String direction){
+		try {
+		if(!gap.hasMoveableAdjecentPiece(direction)) {
+			throw new Exception();
+		}}catch(Exception e) {
+			System.out.println("something wrong in gapSwap");
+			int i = 5/0;
+		}
+		
+		
+		gap = gap.moveAdjecentPiece(direction); 
+		System.out.print(direction + " ");
+	}
+	
+	private void printGrid() {
 		for(SquarePiece piece: tileList) {
 			piece.printGridPart();
 		}
-		
-		return gap;
 	}
+	
 	
 	
 }
