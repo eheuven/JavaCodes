@@ -12,23 +12,24 @@ public class Fifteen {
 		SquarePiece gap = findGap();
 		printGrid();
 		
-		//System.out.printf("Let the computer solve this? (y/n) ");
-		//if(sc.nextLine().equals("y")) {
-			FifteenSolver computer = new FifteenSolver(pieces);
-				
-			computer.solve(gap);
-
-			/*
-		} else {
-			while(unsolved()) {
-				System.out.printf("Move which piece relative to the gap? (left/right/above/under) ");
-				gap = gap.moveAdjecentPiece(sc.next());
+		while(unsolved()) {
+			System.out.println("Move which piece relative to the gap? (left/right/above/under)");
+			System.out.println("Note: Enter 'help' to let the computer solve this puzzle.");
+			
+			String input = sc.next();
+			if(input.equals("help")) {
+				FifteenSolver computer = new FifteenSolver(pieces);
+				computer.solve();
+				gap = findGap();
+			}else {				
+				gap = gap.moveAdjecentPiece(input);
 				printGrid();
 			}
-			System.out.println("You solved the puzzle!");
+		}
+		System.out.println("The puzzle is solved!");
 		
 		sc.close();
-		}*/
+		
 	}
 
 	private static void makePieces() {
@@ -36,7 +37,6 @@ public class Fifteen {
 				
 		for(int pieceNum = 0; pictureParts.size() > 0; pieceNum++) {
 			int randomPieceNumber = (int) (Math.round(Math.random()*(pictureParts.size()-1)));
-			
 			
 			pieces.add(new SquarePiece(pieceNum, pictureParts.get(randomPieceNumber))); //pictureParts.get(randomPiece)
 			pictureParts.remove(randomPieceNumber);

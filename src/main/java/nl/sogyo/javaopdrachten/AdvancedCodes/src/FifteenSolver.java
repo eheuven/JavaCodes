@@ -8,16 +8,16 @@ public class FifteenSolver {
 	
 	public FifteenSolver(ArrayList<SquarePiece> pieces) {
 		tileList = pieces;
+		gap = placeOfValue(0);
 	}
 
-	public void solve(SquarePiece givenGap) {
+	public void solve() {
 		/*
 		 * solving tricks:
 		 * - line numbers up except last 2 of row/column
 		 * - before last number at place of last number(top right corner) & last number below this
 		 * - "rotate" the last 2 numbers
 		 */
-		gap = givenGap;
 		
 		// 4x4
 		moveNumToPosition(placeOfValue(1), tileList.get(0)); 
@@ -37,7 +37,6 @@ public class FifteenSolver {
 			rotateNumbers("left");
 		}
 		finishSolvingIfPossible(12,15);
-		
 	}
 
 	private void finishSolvingIfPossible(int value1, int value2) {
@@ -47,6 +46,10 @@ public class FifteenSolver {
 			if (gapDirection != null) {
 				gapSwapTo(gapDirection);
 				printGrid();
+			}
+			
+			for(SquarePiece tile : tileList) {
+				tile.setMoveable(true);
 			}
 			
 			System.out.println("Computer finished solving the puzzle!");
@@ -387,6 +390,7 @@ public class FifteenSolver {
 	}
 	
 	private void printGrid() {
+		System.out.println("");
 		for(SquarePiece piece: tileList) {
 			piece.printGridPart();
 		}
