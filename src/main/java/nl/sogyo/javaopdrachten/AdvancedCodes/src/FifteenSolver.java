@@ -48,12 +48,11 @@ public class FifteenSolver {
 				printGrid();
 			}
 			
+			System.out.println("Computer finished solving the puzzle!");
+		}else {
 			for(SquarePiece tile : tileList) {
 				tile.setMoveable(true);
 			}
-			
-			System.out.println("Computer finished solving the puzzle!");
-		}else {
 			System.out.println("Computer gave up on solving the puzzle.");
 		}
 	}
